@@ -2,6 +2,7 @@
 # © 2013 Nicolas Bessi (Camptocamp SA)
 # © 2014 Agile Business Group (<http://www.agilebg.com>)
 # © 2015 Grupo ESOC (<http://www.grupoesoc.es>)
+# © 2018 CLTanuki (<http://open-s.info>)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 import logging
 from odoo import api, fields, models
@@ -11,7 +12,7 @@ _logger = logging.getLogger(__name__)
 
 
 class ResPartner(models.Model):
-    """Adds last name and first name; name becomes a stored function field."""
+    """Adds last name, first name and patronymic; name becomes a stored function field."""
     _inherit = 'res.partner'
 
     first_name = fields.Char(
@@ -199,16 +200,16 @@ class ResPartner(models.Model):
             record.first_name = parts['first_name']
             record.patronymic = parts['patronymic'] if 'patronymic' in parts.keys() else ''
 
-    # @api.multi
-    # @api.constrains("first_name", "last_name", "patronymic")
-    # def _check_name(self):
-    #     """Ensure at least one name is set."""
-    #     for record in self:
-    #         if all((
-    #             record.type == 'contact' or record.is_company,
-    #             not (record.first_name or record.last_name or record.patronymic)
-    #         )):
-    #             raise exceptions.EmptyNamesError(record)
+    @api.multi
+    @api.constrains("first_name", "last_name", "patronymic")
+    def _check_name(self):
+        """Ensure at least one name is set."""
+        for record in self:
+            if all((
+                record.type == 'contact' or record.is_company,
+                not (record.first_name or record.last_name or record.patronymic)
+            )):
+                raise exceptions.EmptyNamesError(record)
 
     @api.onchange("first_name", "last_name", "patronymic")
     def _onchange_subnames(self):
@@ -250,8 +251,8 @@ class ResPartner(models.Model):
 
     # Disabling SQL constraint givint a more explicit error using a Python
     # contstraint
-    # _sql_constraints = [(
-    #     'check_name',
-    #     "CHECK( 1=1 )",
-    #     'Contacts require a name.'
-    # )]
+    _sql_constraints = [(
+        'check_name',
+        "CHECK( 1=1 )",
+        'Contacts require a name.'
+    )]
